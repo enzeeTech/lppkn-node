@@ -22,11 +22,18 @@ const notificationWebHook = async (req, res) => {
     // Log the received notification payload
     console.log('Received notification payload:');
     if (!req.body.entry) {
-        res.status(400).json({ message: "missing required parameters 'entry' in body"})
+        return res.status(400).json({ message: "missing required parameters 'entry' in body" });
     }
-    const { Title: title, Information: body } = req.body.entry;
 
-    notificationPayload = { title, body, data: { data: 'goes here' }};
+    // Check if the model starts with 'lokasi'
+    if (req.body.model && req.body.model.startsWith('lokasi')) {
+        console.log('Request from model starting with "lokasi", not triggering notification');
+        return res.status(200).send('No action taken for model starting with "lokasi"');
+    }
+
+    const { Title: title, Information: body } = req.body.entry;
+    const notificationPayload = { title, body, data: { data: 'goes here' }};
+
     // Send a push notification to the Expo app
     const tokens = (await m.ExpoToken.findAll({ raw: true })).map(t => t.token);
     tokens.forEach(token => sendPushNotification(token, notificationPayload));
@@ -37,9 +44,9 @@ const notificationWebHook = async (req, res) => {
         return res.end();
     }
 
-
     // Send a success response
     res.status(200).send('Notification payload received');
-}
+};
+
 
 module.exports = { store, notificationWebHook };
